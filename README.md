@@ -1,6 +1,6 @@
 # hn_app
 
-A new Flutter application.
+A simplified, forked version of the [hn_app](https://github.com/filiph/hn_app) written on the Flutter Boring Show. This one is stripped down to highlight the use of webviews.
 
 ## Getting Started
 
