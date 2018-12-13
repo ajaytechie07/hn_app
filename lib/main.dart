@@ -5,7 +5,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hn_app/src/article.dart';
 import 'package:hn_app/src/hn_bloc.dart';
-//import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
@@ -47,6 +46,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int _currentIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,6 +58,29 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (context, snapshot) => ListView(
               children: snapshot.data.map(_buildItem).toList(),
             ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        items: [
+          BottomNavigationBarItem(
+            title: Text('Top Stories'),
+            icon: Icon(Icons.arrow_drop_up),
+          ),
+          BottomNavigationBarItem(
+            title: Text('New Stories'),
+            icon: Icon(Icons.new_releases),
+          ),
+        ],
+        onTap: (index) {
+          if (index == 0) {
+            widget.bloc.storiesType.add(StoriesType.topStories);
+          } else {
+            widget.bloc.storiesType.add(StoriesType.newStories);
+          }
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
   }
