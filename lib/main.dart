@@ -1,6 +1,8 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hn_app/src/article.dart';
 import 'package:hn_app/src/hn_bloc.dart';
 //import 'package:url_launcher/url_launcher.dart';
@@ -66,23 +68,35 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
+          child: Column(
             children: <Widget>[
-              Text('${article.descendants} comments'),
-              IconButton(
-                icon: Icon(Icons.launch),
-                onPressed: () async {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            appBar: AppBar(title: Text(article.title)),
-                            body: WebView(
-                                initialUrl: article.url,
-                                javaScriptMode: JavaScriptMode.unrestricted,
-                              ))));
-                },
-              )
+              Row(
+                children: <Widget>[
+                  Text('${article.descendants} comments'),
+                  IconButton(
+                    icon: Icon(Icons.launch),
+                    onPressed: () async {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Scaffold(
+                                  appBar: AppBar(title: Text(article.title)),
+                                  body: WebView(
+                                    initialUrl: article.url,
+                                    javaScriptMode: JavaScriptMode.unrestricted,
+                                  ))));
+                    },
+                  )
+                ],
+              ),
+              Container(
+                  child: WebView(
+                    initialUrl: article.url,
+                    gestureRecognizers: Set()
+                      ..add(Factory<VerticalDragGestureRecognizer>(
+                          () => VerticalDragGestureRecognizer())),
+                  ),
+                  height: 200),
             ],
           ),
         ),
