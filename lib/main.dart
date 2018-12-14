@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
@@ -8,12 +6,12 @@ import 'package:hn_app/src/hn_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
-  final hnBloc = HackerNewsBloc();
+  final hnBloc = HackerNewsStream();
   runApp(MyApp(bloc: hnBloc));
 }
 
 class MyApp extends StatelessWidget {
-  final HackerNewsBloc bloc;
+  final HackerNewsStream bloc;
 
   MyApp({
     Key key,
@@ -28,66 +26,77 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       home: MyHomePage(
         title: 'Flutter Hacker News',
-        bloc: bloc,
+        stream: bloc,
       ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  final HackerNewsBloc bloc;
+class MyHomePage extends StatelessWidget {
+  final HackerNewsStream stream;
 
   final String title;
 
-  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _currentIndex = 0;
+  MyHomePage({Key key, this.title, this.stream}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: StreamBuilder<UnmodifiableListView<Article>>(
-        stream: widget.bloc.articles,
-        initialData: UnmodifiableListView<Article>([]),
-        builder: (context, snapshot) => ListView(
-              children: snapshot.data.map(_buildItem).toList(),
+    return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: TabBarView(
+          children: <Widget>[
+            StreamBuilder<List<Article>>(
+              stream: stream.topArticles,
+              initialData: <Article>[],
+              builder: (context, snapshot) => ListView(
+                    children: snapshot.data.map((article) => _buildItem(article, context)).toList(),
+                  ),
             ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        items: [
-          BottomNavigationBarItem(
-            title: Text('Top Stories'),
-            icon: Icon(Icons.arrow_drop_up),
+            StreamBuilder<List<Article>>(
+              stream: stream.newArticles,
+              initialData: <Article>[],
+              builder: (context, snapshot) => ListView(
+                    children: snapshot.data.map((article) => _buildItem(article, context)).toList(),
+                  ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey[200]))),
+          child: TabBar(
+            labelColor: Theme.of(context).accentColor,
+            unselectedLabelColor: Theme.of(context).disabledColor,
+            tabs: [
+              Tab(
+                text: 'Top Stories',
+                icon: Icon(Icons.arrow_drop_up),
+              ),
+              Tab(
+                text: 'New Stories',
+                icon: Icon(Icons.new_releases),
+              ),
+            ],
+            /*onTap: (index) {
+              if (index == 0) {
+                widget.bloc.storiesType.add(StoriesType.topStories);
+              } else {
+                widget.bloc.storiesType.add(StoriesType.newStories);
+              }
+              setState(() {
+                _currentIndex = index;
+              });
+            },*/
           ),
-          BottomNavigationBarItem(
-            title: Text('New Stories'),
-            icon: Icon(Icons.new_releases),
-          ),
-        ],
-        onTap: (index) {
-          if (index == 0) {
-            widget.bloc.storiesType.add(StoriesType.topStories);
-          } else {
-            widget.bloc.storiesType.add(StoriesType.newStories);
-          }
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        ),
       ),
     );
   }
 
-  Widget _buildItem(Article article) {
+  Widget _buildItem(Article article, BuildContext context) {
     return ExpansionTile(
-      key: Key(article.title),
+      //key: Key(article.title),
       title: Text(article.title ?? '[null]'),
       children: [
         Padding(

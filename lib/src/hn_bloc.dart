@@ -11,39 +11,23 @@ class HackerNewsApiError extends Error {
   HackerNewsApiError(this.message);
 }
 
-class HackerNewsBloc {
+class HackerNewsStream {
   HashMap<int, Article> _cachedArticles;
   static const _baseUrl = 'https://hacker-news.firebaseio.com/v0/';
 
-  final _isLoadingSubject = BehaviorSubject<bool>(seedValue: false);
+  final _topArticlesSubject = BehaviorSubject<List<Article>>();
+  final _newArticlesSubject = BehaviorSubject<List<Article>>();
 
-  final _articlesSubject = BehaviorSubject<UnmodifiableListView<Article>>();
-
-  var _articles = <Article>[];
-
-  final _storiesTypeController = StreamController<StoriesType>();
-
-  HackerNewsBloc() {
+  HackerNewsStream() {
     _cachedArticles = HashMap<int, Article>();
     _initializeArticles();
-
-    _storiesTypeController.stream.listen((storiesType) async {
-      _getArticlesAndUpdate(await _getIds(storiesType));
-    });
   }
 
-  Stream<UnmodifiableListView<Article>> get articles => _articlesSubject.stream;
-
-  Stream<bool> get isLoading => _isLoadingSubject.stream;
-
-  Sink<StoriesType> get storiesType => _storiesTypeController.sink;
+  Stream<List<Article>> get topArticles => _topArticlesSubject.stream;
+  Stream<List<Article>> get newArticles => _newArticlesSubject.stream;
 
   Future<void> _initializeArticles() async {
-    _getArticlesAndUpdate(await _getIds(StoriesType.topStories));
-  }
-
-  void close() {
-    _storiesTypeController.close();
+    _getArticlesAndUpdate();
   }
 
   Future<Article> _getArticle(int id) async {
@@ -59,12 +43,11 @@ class HackerNewsBloc {
     return _cachedArticles[id];
   }
 
-  _getArticlesAndUpdate(List<int> ids) async {
-    _isLoadingSubject.add(true);
-    await _updateArticles(ids);
-
-    _articlesSubject.add(UnmodifiableListView(_articles));
-    _isLoadingSubject.add(false);
+  _getArticlesAndUpdate() async {
+    var topIds = await _getIds(StoriesType.topStories);
+    var newIds = await _getIds(StoriesType.newStories);
+    _topArticlesSubject.add(await _updateArticles(topIds));
+    _newArticlesSubject.add(await _updateArticles(newIds));
   }
 
   Future<List<int>> _getIds(StoriesType type) async {
@@ -77,10 +60,9 @@ class HackerNewsBloc {
     return parseTopStories(response.body).take(10).toList();
   }
 
-  Future<Null> _updateArticles(List<int> articleIds) async {
+  Future<List<Article>> _updateArticles(List<int> articleIds) async {
     final futureArticles = articleIds.map((id) => _getArticle(id));
-    final articles = await Future.wait(futureArticles);
-    _articles = articles;
+    return Future.wait(futureArticles);
   }
 }
 
